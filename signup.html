@@ -1,0 +1,88 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Sign Up</title>
+  <style>
+    body { font-family: Arial, sans-serif; max-width: 500px; margin: auto; padding: 20px; }
+    label { display: block; margin-top: 10px; }
+    input { width: 100%; padding: 8px; margin-top: 5px; }
+    button { padding: 10px 20px; margin-top: 15px; }
+    #message { margin-top: 20px; color: green; }
+  </style>
+</head>
+<body>
+  <h2>Sign Up</h2>
+  <form id="signupForm">
+    <label for="name">Name:</label>
+    <input type="text" id="name" required>
+
+    <label for="email">Email:</label>
+    <input type="email" id="email" required>
+
+    <label for="password">Password:</label>
+    <input type="password" id="password" required>
+
+    <button type="submit">Sign Up</button>
+  </form>
+  <div id="message"></div>
+
+  <script>
+    const clientId = 's1hh28dpae2w0izh8fy2vpg0';
+    const clientSecret = 'vqkt3Sbz8Jl1ULwrH3pP95lp';
+    const authUrl = 'https://mcbpcpxtk6qzkpnzk1spgzn07rh0.auth.marketingcloudapis.com/';
+    const restUrl = 'https://mcbpcpxtk6qzkpnzk1spgzn07rh0.rest.marketingcloudapis.com/';
+    const dataExtensionKey = 'UserDataExtensionName';
+
+    async function getAccessToken() {
+      const response = await fetch(authUrl, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          grant_type: 'client_credentials',
+          client_id: clientId,
+          client_secret: clientSecret
+        })
+      });
+      const data = await response.json();
+      return data.access_token;
+    }
+
+    document.getElementById('signupForm').addEventListener('submit', async (e) => {
+      e.preventDefault();
+      const name = document.getElementById('name').value;
+      const email = document.getElementById('email').value;
+      const password = document.getElementById('password').value;
+
+      const token = await getAccessToken();
+
+      const payload = {
+        items: [
+          {
+            keys: { Email: email },
+            values: { Name: name, Password: password }
+          }
+        ]
+      };
+
+      const response = await fetch(`${restUrl}/data/v1/customobjectdata/key/${dataExtensionKey}/rowset`, {
+        method: 'POST',
+        headers: {
+          'Authorization': `Bearer ${token}`,
+          'Content-Type': 'application/json'
+        },
+        body: JSON.stringify(payload)
+      });
+
+      if (response.ok) {
+        document.getElementById('message').innerText = 'Thank you for signing up! Redirecting to login...';
+        setTimeout(() => window.location.href = 'index.html', 10000);
+      } else {
+        const errorData = await response.json();
+        alert('Error signing up: ' + (errorData.message || 'Unknown error'));
+      }
+    });
+  </script>
+</body>
+</html>
