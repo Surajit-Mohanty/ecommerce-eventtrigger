@@ -1,63 +1,106 @@
 <!DOCTYPE html>
 <html lang="en">
 <head>
-  <meta charset="UTF-8">
+  <meta charset="UTF-8" />
   <title>Cart</title>
+  <link rel="stylesheet" href="style.css" />
   <script src="collect.js"></script>
   <style>
-    body { font-family: Arial; max-width: 700px; margin: auto; }
-    .item {
-      border-bottom: 1px solid #ccc;
-      padding: 10px 0;
-      display: flex;
+    body { font-family: Arial; max-width: 800px; margin: auto; }
+    #cartItems > div {
+      border: 1px solid #ddd; 
+      padding: 15px; 
+      margin: 10px 0; 
+      display: flex; 
+      align-items: center; 
       justify-content: space-between;
     }
-    button { padding: 5px 10px; }
+    #cartItems img { margin-right: 20px; width: 80px; height: auto; }
+    .item-details {
+      flex-grow: 1;
+    }
+    .remove-link {
+      color: red;
+      cursor: pointer;
+      margin-left: 20px;
+      text-decoration: underline;
+    }
+    button { padding: 10px 15px; margin-top: 10px; }
+    header { display: flex; justify-content: space-between; margin-bottom: 20px; }
   </style>
 </head>
 <body>
+  <header>
+    <div>
+      <strong>User:</strong> <span id="userInfo"></span><br />
+      <strong>Login Time:</strong> <span id="loginTime"></span>
+    </div>
+    <button onclick="logout()">Logout</button>
+  </header>
+
   <h1>Your Cart</h1>
   <div id="cartItems"></div>
-  <button onclick="checkout()">Checkout</button>
+  <button onclick="sendToSFMC()">Send to SFMC</button>
+  <a href="products.html" id="continueLink">Continue Shopping</a>
 
   <script>
     const email = localStorage.getItem("user_email");
-    if (!email) location.href = "index.html";
+    const name = localStorage.getItem("user_name");
+    const loginTime = localStorage.getItem("login_time");
 
-    const cartKey = `cart_items_${email}`;
-    let cart = JSON.parse(localStorage.getItem(cartKey)) || [];
-
-    function removeItem(id) {
-      cart = cart.filter(item => item.id !== id);
-      localStorage.setItem(cartKey, JSON.stringify(cart));
-      renderCart();
-      trackCart(cart);
+    if (!email || !name) {
+      window.location.href = "index.html";
+    } else {
+      document.getElementById("userInfo").innerText = `${name} (${email})`;
+      document.getElementById("loginTime").innerText = loginTime;
     }
 
+    function logout() {
+      localStorage.clear();
+      window.location.href = "index.html";
+    }
+
+    let cartKey = `cart_items_${email}`;
+    let cart = JSON.parse(localStorage.getItem(cartKey)) || [];
+    const container = document.getElementById("cartItems");
+
     function renderCart() {
-      const container = document.getElementById("cartItems");
       container.innerHTML = "";
       if (cart.length === 0) {
-        container.innerHTML = "<p>Cart is empty.</p>";
+        container.innerHTML = "<p>Your cart is empty.</p>";
+        document.getElementById("continueLink").style.display = "inline";
         return;
       }
-      cart.forEach(item => {
+      cart.forEach((item, index) => {
         const div = document.createElement("div");
-        div.className = "item";
         div.innerHTML = `
-          <span>${item.name} x ${item.quantity}</span>
-          <button onclick="removeItem(${item.id})">Remove</button>
+          <img src="${item.image}" alt="${item.name}" />
+          <div class="item-details">
+            <strong>${item.name}</strong><br />
+            Quantity: ${item.quantity}<br />
+            Price: $${item.price}
+          </div>
+          <div>
+            <span class="remove-link" onclick="removeFromCart(${index})">Remove</span>
+          </div>
         `;
         container.appendChild(div);
       });
     }
 
-    function checkout() {
-      if (cart.length === 0) return alert("Cart is empty");
-      trackConversion(cart);
-      alert("Order placed!");
-      localStorage.removeItem(cartKey);
+    function removeFromCart(index) {
+      cart.splice(index, 1);
+      localStorage.setItem(cartKey, JSON.stringify(cart));
       renderCart();
+      trackCart(cart);
+    }
+
+    function sendToSFMC() {
+      if (cart.length === 0) {
+        alert("Cart is empty. Please add items before sending.");
+        return;
+      }
+      trackConversion(cart);
     }
 
     renderCart();
