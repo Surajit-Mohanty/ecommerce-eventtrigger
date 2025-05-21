@@ -1,0 +1,67 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Cart</title>
+  <script src="collect.js"></script>
+  <style>
+    body { font-family: Arial; max-width: 700px; margin: auto; }
+    .item {
+      border-bottom: 1px solid #ccc;
+      padding: 10px 0;
+      display: flex;
+      justify-content: space-between;
+    }
+    button { padding: 5px 10px; }
+  </style>
+</head>
+<body>
+  <h1>Your Cart</h1>
+  <div id="cartItems"></div>
+  <button onclick="checkout()">Checkout</button>
+
+  <script>
+    const email = localStorage.getItem("user_email");
+    if (!email) location.href = "index.html";
+
+    const cartKey = `cart_items_${email}`;
+    let cart = JSON.parse(localStorage.getItem(cartKey)) || [];
+
+    function removeItem(id) {
+      cart = cart.filter(item => item.id !== id);
+      localStorage.setItem(cartKey, JSON.stringify(cart));
+      renderCart();
+      trackCart(cart);
+    }
+
+    function renderCart() {
+      const container = document.getElementById("cartItems");
+      container.innerHTML = "";
+      if (cart.length === 0) {
+        container.innerHTML = "<p>Cart is empty.</p>";
+        return;
+      }
+      cart.forEach(item => {
+        const div = document.createElement("div");
+        div.className = "item";
+        div.innerHTML = `
+          <span>${item.name} x ${item.quantity}</span>
+          <button onclick="removeItem(${item.id})">Remove</button>
+        `;
+        container.appendChild(div);
+      });
+    }
+
+    function checkout() {
+      if (cart.length === 0) return alert("Cart is empty");
+      trackConversion(cart);
+      alert("Order placed!");
+      localStorage.removeItem(cartKey);
+      renderCart();
+    }
+
+    renderCart();
+    trackPageView("cart.html");
+  </script>
+</body>
+</html>
