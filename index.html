@@ -1,0 +1,83 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <title>Login / Signup</title>
+  <script src="collect.js"></script>
+  <style>
+    body { font-family: Arial; max-width: 400px; margin: auto; padding: 20px; }
+    input, button { display: block; margin: 10px 0; width: 100%; padding: 10px; }
+  </style>
+</head>
+<body>
+  <h2>Login</h2>
+  <input id="loginEmail" placeholder="Email">
+  <input id="loginPassword" type="password" placeholder="Password">
+  <button onclick="loginUser()">Login</button>
+
+  <h2>Signup</h2>
+  <input id="signupName" placeholder="Name">
+  <input id="signupEmail" placeholder="Email">
+  <input id="signupPassword" type="password" placeholder="Password">
+  <button onclick="signupUser()">Sign Up</button>
+
+  <script>
+    const CLIENT_ID = "s1hh28dpae2w0izh8fy2vpg0";
+    const CLIENT_SECRET = "vqkt3Sbz8Jl1ULwrH3pP95lp";
+    const AUTH_URL = "https://mcbpcpxtk6qzkpnzk1spgzn07rh0.auth.marketingcloudapis.com/";
+    const REST_URL = "https://mcbpcpxtk6qzkpnzk1spgzn07rh0.rest.marketingcloudapis.com/";
+    const USER_DE = "UserDataExtension";
+
+    async function getAccessToken() {
+      const res = await fetch(`${AUTH_URL}/v2/token`, {
+        method: "POST",
+        headers: { "Content-Type": "application/json" },
+        body: JSON.stringify({
+          grant_type: "client_credentials",
+          client_id: CLIENT_ID,
+          client_secret: CLIENT_SECRET
+        })
+      });
+      const data = await res.json();
+      return data.access_token;
+    }
+
+    async function signupUser() {
+      const name = document.getElementById("signupName").value;
+      const email = document.getElementById("signupEmail").value;
+      const password = document.getElementById("signupPassword").value;
+      const token = await getAccessToken();
+      await fetch(`${REST_URL}/hub/v1/dataevents/key:${USER_DE}/rowset`, {
+        method: "POST",
+        headers: {
+          "Content-Type": "application/json",
+          Authorization: `Bearer ${token}`
+        },
+        body: JSON.stringify({
+          items: [{ Email: email, Name: name, Password: password }]
+        })
+      });
+      alert("Signup successful. Now log in.");
+    }
+
+    async function loginUser() {
+      const email = document.getElementById("loginEmail").value;
+      const password = document.getElementById("loginPassword").value;
+      const token = await getAccessToken();
+      const response = await fetch(`${REST_URL}/hub/v1/dataevents/key:${USER_DE}/rowset?$filter=Email%20eq%20'${email}'`, {
+        headers: { Authorization: `Bearer ${token}` }
+      });
+      const data = await response.json();
+      const user = data.items?.[0];
+      if (user && user.Password === password) {
+        localStorage.setItem("user_email", user.Email);
+        localStorage.setItem("user_name", user.Name);
+        localStorage.setItem("login_time", new Date().toISOString());
+        window.location.href = "products.html";
+      } else {
+        alert("Login failed. Check credentials.");
+      }
+    }
+  </script>
+</body>
+</html>
